@@ -1,13 +1,17 @@
 package main
 
 import (
-	"golang.org/x/crypto/ssh"
+	"os"
 	"log"
+
+	"golang.org/x/crypto/ssh"
 	"github.com/yahoo/vssh"
 )
 
 func setConfig() (config *ssh.ClientConfig) {
-	config, err := vssh.GetConfigPEM("root", "/home/bitlatte/.ssh/id_rsa")
+	home := os.Getenv("HOME")
+	keyPath := home + "/.ssh/id_rsa"
+	config, err := vssh.GetConfigPEM("root", keyPath)
 	if err != nil {
 		log.Fatal(err)
 	}

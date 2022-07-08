@@ -38,17 +38,26 @@ func main() {
 
 		if err != nil {
 			log.Fatal(err)
-			os.Exit(1)
+			os.Exit(0)
 		}
 
 		if help {
 			showHelp()
+			os.Exit(0)
 		}
-		if file == "" {
-			log.Fatal("You must provide a file to run")
+
+		if arg == "key" {
+			home := os.Getenv("HOME")
+			keyPath := home + "/.ssh/id_rsa"
+			f := readFile(keyPath)
+			fmt.Println(string(f))
+			os.Exit(0)
 		}
-		
+
 		if IP {
+			if file == "" {
+				log.Fatal("You must provide a file to run")
+			}
 			client := fmt.Sprintf("%s:%s", arg, fmt.Sprint(port))
 			f := readFile(file)
 			uuid := uuid.New()
