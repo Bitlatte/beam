@@ -10,7 +10,7 @@
 
 # What is Beam
 
-Beam is a command line utility for running scripts across multiple servers. Ever spun up several new servers and needed to set them all up exactly the same way? With Beam this is as easy as one command.
+If you've ever needed to run a shell script on multiple computers, you know how tedious it can be. With Beam, you can easily and automatically run your shell script on as many computers as you want!
 
 # Usage
 
