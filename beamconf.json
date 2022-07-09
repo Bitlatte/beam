@@ -1,0 +1,7 @@
+{
+	"auth": {
+		"keyfile": "~/.ssh/id_rsa",
+		"user": "bitlatte"
+	},
+	"hosts": {}
+}

@@ -5,9 +5,16 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+var (
+	cfgFile string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -32,15 +39,40 @@ func Execute() {
 }
 
 func init() {
+	cobra.OnInitialize(initConfig)
 	// Hide Default Completion Command
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.beam.yaml)")
+	cwd, err := os.Getwd()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", (cwd + "/beamconf.json"), "config file to use")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func initConfig() {
+	if cfgFile != "" {
+		// Use config file from flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		cwd, err := os.Getwd()
+		cobra.CheckErr(err)
+
+		viper.AddConfigPath(cwd)
+		viper.SetConfigType("json")
+		viper.SetConfigName("beamconf")
+	}
+
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Fprintln(os.Stderr, "Using Config File:", viper.ConfigFileUsed())
+	}
 }

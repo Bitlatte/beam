@@ -6,33 +6,60 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
+var (
+	user string
+	key  string
+)
+
+func writeDefaultConfig(keypath string, user string) error {
+	config := fmt.Sprintf(`{
+	"auth": {
+		"keyfile": "%s",
+		"user": "%s"
+	},
+	"hosts": {}
+}`, keypath, user)
+	err := os.WriteFile("beamconf.json", []byte(config), 0755)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Configure Beam",
-	Long: `Setup the default config for Beam.
-Until this is done Beam will default to the following:
-
-	SSH Key for Auth
-	Port 22 for SSH Connections`,
+	Long: `
+Setup config for Beam. If run without flags
+a general config file will be generated for you.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("init called")
+		err := writeDefaultConfig(key, user)
+		if err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(initCmd)
 
-	initCmd.Flags().IntP("port", "p", 22, "Set the default SSH Connection Port")
-	initCmd.Flags().Bool("keys", true, "Use SSH Keys over Password Auth")
-	initCmd.Flags().String("keyfile", (os.Getenv("HOME") + "/.ssh/id_rsa"), "SSH Key path to use for Auth")
-	initCmd.Flags().String("password", "", "Password to use if using Password Auth")
-	initCmd.Flags().String("user", "root", "Default User to use when Logging in to Hosts")
+	home, err := os.UserHomeDir()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	initCmd.Flags().StringVarP(&user, "user", "u", "root", "User to login with")
+	initCmd.Flags().StringVarP(&key, "key", "k", (home + "/.ssh/id_rsa"), "Key file to use")
 
 	// Here you will define your flags and configuration settings.
 
