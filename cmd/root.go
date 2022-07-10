@@ -1,36 +1,69 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
+	"github.com/Bitlatte/beam/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/yahoo/vssh"
 )
 
 var (
 	cfgFile string
 )
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "beam",
 	Short: "Beam commands across the cosmos",
 	Long:  `Execute shell scripts across a multitude of servers with a single command`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
+		config, err := utils.GetSSHConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Loop through hosts
+		for host := range config.Hosts {
+
+			vs := vssh.New().Start().OnDemand()
+
+			clientConfig, err := vssh.GetConfigPEM(config.Auth.User, config.Auth.Key)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			timeout, _ := time.ParseDuration("6s")
+			client := fmt.Sprintf("%s:%s", config.Hosts[host].Address, fmt.Sprint(config.Hosts[host].Port))
+			vs.AddClient(client, clientConfig, vssh.SetMaxSessions(2))
+			vs.Wait()
+
+			respChan := vs.Run(ctx, "ping", timeout)
+
+			resp := <-respChan
+			if err := resp.Err(); err != nil {
+				log.Fatal(err)
+			}
+
+			stream := resp.GetStream()
+			defer stream.Close()
+
+			for stream.ScanStdout() {
+				txt := stream.TextStdout()
+				fmt.Println(txt)
+			}
+		}
 
 	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
@@ -40,11 +73,8 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	// Hide Default Completion Command
+
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
 
 	cwd, err := os.Getwd()
 
@@ -53,15 +83,10 @@ func init() {
 	}
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", (cwd + "/beamconf.json"), "config file to use")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func initConfig() {
 	if cfgFile != "" {
-		// Use config file from flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
 		cwd, err := os.Getwd()
@@ -69,7 +94,7 @@ func initConfig() {
 
 		viper.AddConfigPath(cwd)
 		viper.SetConfigType("json")
-		viper.SetConfigName("beamconf")
+		viper.SetConfigName("config")
 	}
 
 	if err := viper.ReadInConfig(); err == nil {

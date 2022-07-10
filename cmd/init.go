@@ -1,7 +1,3 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
@@ -20,12 +16,12 @@ var (
 func writeDefaultConfig(keypath string, user string) error {
 	config := fmt.Sprintf(`{
 	"auth": {
-		"keyfile": "%s",
+		"key": "%s",
 		"user": "%s"
 	},
-	"hosts": {}
+	"hosts": []
 }`, keypath, user)
-	err := os.WriteFile("beamconf.json", []byte(config), 0755)
+	err := os.WriteFile("config.json", []byte(config), 0755)
 
 	if err != nil {
 		return err
@@ -34,7 +30,6 @@ func writeDefaultConfig(keypath string, user string) error {
 	return nil
 }
 
-// initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Configure Beam",
@@ -60,14 +55,4 @@ func init() {
 
 	initCmd.Flags().StringVarP(&user, "user", "u", "root", "User to login with")
 	initCmd.Flags().StringVarP(&key, "key", "k", (home + "/.ssh/id_rsa"), "Key file to use")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// initCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
