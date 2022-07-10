@@ -10,7 +10,6 @@ import (
 	"github.com/Bitlatte/beam/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/yahoo/vssh"
 )
 
 var (
@@ -29,10 +28,7 @@ var rootCmd = &cobra.Command{
 
 		// Loop through hosts
 		for host := range config.Hosts {
-
-			vs := vssh.New().Start().OnDemand()
-
-			clientConfig, err := vssh.GetConfigPEM(config.Auth.User, config.Auth.Key)
+			vs, err := utils.CreateSession(config, &config.Hosts[host])
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -41,15 +37,12 @@ var rootCmd = &cobra.Command{
 			defer cancel()
 
 			timeout, _ := time.ParseDuration("6s")
-			client := fmt.Sprintf("%s:%s", config.Hosts[host].Address, fmt.Sprint(config.Hosts[host].Port))
-			vs.AddClient(client, clientConfig, vssh.SetMaxSessions(2))
-			vs.Wait()
 
-			respChan := vs.Run(ctx, "ping", timeout)
+			respChan := vs.Run(ctx, "ping -c 4 192.168.55.10", timeout)
 
 			resp := <-respChan
 			if err := resp.Err(); err != nil {
-				log.Fatal(err)
+				fmt.Printf("[%s] %s", config.Hosts[host].Address, err)
 			}
 
 			stream := resp.GetStream()
@@ -57,7 +50,7 @@ var rootCmd = &cobra.Command{
 
 			for stream.ScanStdout() {
 				txt := stream.TextStdout()
-				fmt.Println(txt)
+				fmt.Printf("[%s] %s", config.Hosts[host].Address, txt)
 			}
 		}
 
@@ -82,7 +75,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", (cwd + "/beamconf.json"), "config file to use")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", (cwd + "/config.json"), "config file to use")
 }
 
 func initConfig() {

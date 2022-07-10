@@ -8,8 +8,9 @@ type AuthConfig struct {
 }
 
 type HostConfig struct {
-	Address string `mapstructure:"address"`
-	Port    int    `mapstructure:"port"`
+	Address string     `mapstructure:"address"`
+	Port    int        `mapstructure:"port"`
+	Auth    AuthConfig `mapstructure:"auth"`
 }
 
 type Config struct {

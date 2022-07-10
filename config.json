@@ -1,12 +1,16 @@
 {
 	"auth": {
 		"key": "/home/bitlatte/.ssh/id_rsa",
-		"user": "root"
+		"user": "beam"
 	},
 	"hosts": [
 		{
 			"address": "165.227.78.71",
-			"port": 22
+			"port": 22,
+			"auth": {
+				"key": "/home/bitlatte/.ssh/id_rsa",
+				"user": "root"
+			}
 		}
 	]
 }
