@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,12 +15,23 @@ import (
 
 var (
 	cfgFile string
+	file    string
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "beam",
+	Use:   "beam [flags] <file>",
 	Short: "Beam commands across the cosmos",
 	Long:  `Execute shell scripts across a multitude of servers with a single command`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return errors.New("missing file path")
+		}
+		_, err := utils.ReadFile(args[0])
+		if err != nil {
+			return err
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		config, err := utils.GetSSHConfig()
 		if err != nil {
