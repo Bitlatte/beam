@@ -1,6 +1,8 @@
 package utils
 
-import "github.com/spf13/viper"
+import (
+	"github.com/spf13/viper"
+)
 
 type AuthConfig struct {
 	Key  string `mapstructure:"key"`
@@ -20,10 +22,26 @@ type Config struct {
 
 var config Config
 
-func GetSSHConfig() (*Config, error) {
+func GetBeamConfig() (*Config, error) {
 	err := viper.Unmarshal(&config)
 	if err != nil {
 		return &Config{}, err
 	}
 	return &config, nil
+}
+
+func GetAuth(config *Config, host *HostConfig) map[string]string {
+	auth := map[string]string{
+		"user": host.Auth.User,
+		"key":  host.Auth.Key,
+	}
+
+	if auth["user"] == "" {
+		auth["user"] = config.Auth.User
+	}
+	if auth["key"] == "" {
+		auth["key"] = config.Auth.Key
+	}
+
+	return auth
 }

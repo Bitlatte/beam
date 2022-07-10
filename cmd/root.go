@@ -11,6 +11,7 @@ import (
 	"github.com/Bitlatte/beam/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/yahoo/vssh"
 )
 
 var (
@@ -33,37 +34,65 @@ var rootCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		config, err := utils.GetSSHConfig()
+		file = args[0]
+		vs := vssh.New().Start().OnDemand()
+		// Get Beam Config from config.json
+		config, err := utils.GetBeamConfig()
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
-
-		// Loop through hosts
+		// Loop through All The Hosts within the Config File
 		for host := range config.Hosts {
-			vs, err := utils.CreateSession(config, &config.Hosts[host])
+			// Address:Port
+			address := fmt.Sprintf("%s:%s", config.Hosts[host].Address, fmt.Sprint(config.Hosts[host].Port))
+			//
+			auth := utils.GetAuth(config, &config.Hosts[host])
+
+			hostConfig, err := utils.GetClientConfig(auth)
 			if err != nil {
-				log.Fatal(err)
+				panic(err)
 			}
+
+			vs.AddClient(address, hostConfig, vssh.SetMaxSessions(4))
+			vs.Wait()
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			timeout, _ := time.ParseDuration("6s")
 
-			respChan := vs.Run(ctx, "ping -c 4 192.168.55.10", timeout)
-
-			resp := <-respChan
-			if err := resp.Err(); err != nil {
-				fmt.Printf("[%s] %s", config.Hosts[host].Address, err)
+			// Copy File To Remote Host
+			err = utils.RemoteCopy(address, auth["user"], file, hostConfig)
+			if err != nil {
+				panic(err)
 			}
 
-			stream := resp.GetStream()
-			defer stream.Close()
-
-			for stream.ScanStdout() {
-				txt := stream.TextStdout()
-				fmt.Printf("[%s] %s", config.Hosts[host].Address, txt)
+			cmds := []string{
+				"./script.sh",
+				"rm -rf ./script.sh",
 			}
+
+			for cmd := range cmds {
+				respChan := vs.Run(ctx, cmds[cmd], timeout)
+
+				for resp := range respChan {
+					if err := resp.Err(); err != nil {
+						panic(err)
+					}
+					stream := resp.GetStream()
+					defer stream.Close()
+
+					for stream.ScanStdout() {
+						txt := stream.TextStdout()
+						fmt.Println(resp.ID(), txt)
+					}
+
+					if err := stream.Err(); err != nil {
+						panic(err)
+					}
+				}
+			}
+
 		}
 
 	},
