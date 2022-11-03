@@ -1,5 +1,5 @@
 <div align="center">
-	<img width="600" src="https://bitstore.sfo3.cdn.digitaloceanspaces.com/beam.png" />
+	<img width="600" src="https://pub-e4f089c2d1314ea09e2d7dca0cca5013.r2.dev/beam.png" />
 	<h4>
 	Beam commands across the cosmos.
 	</h4>
@@ -14,7 +14,7 @@ Beam is a command line utility for running scripts across multiple servers. Ever
 
 # Usage
 
-<img src="https://bitstore.sfo3.cdn.digitaloceanspaces.com/carbon.png" />
+<img src="https://pub-e4f089c2d1314ea09e2d7dca0cca5013.r2.dev/carbon.png" />
 
 # Install
 
